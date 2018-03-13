@@ -28,20 +28,13 @@ Function IOPV_GraphCompositionMap(x_vals,y_vals,comp) : Graph
 	ColorScale/C/N=text0 fsize=12
 End
 
-Function IOPV_GraphCrossSections(unit_size,[path_str,cluster_name,set_num,morph_num])
+Function IOPV_GraphCrossSections(unit_size,[path_str,morph_num])
 	Variable unit_size
 	String path_str
-	String cluster_name
-	Variable set_num
 	Variable morph_num
 	String original_folder = GetDataFolder(1)
 	if(!ParamIsDefault(path_str))
 		NewPath/O/Q tempPath, path_str
-		LoadWave/N=tempWave/D/J/K=1/L={0,0,0,0,0}/O/P=tempPath/Q "morphology_"+num2str(morph_num)+".txt"
-		KillPath tempPath
-	elseif(!ParamIsDefault(cluster_name))
-		NewDataFolder/O/S $num2istr(set_num)
-		NewPath/O/Q tempPath, "Z:\\Data\\Morphology Data\\"+cluster_name+"\\"+num2istr(set_num)
 		LoadWave/N=tempWave/D/J/K=1/L={0,0,0,0,0}/O/P=tempPath/Q "morphology_"+num2str(morph_num)+".txt"
 		KillPath tempPath
 	else
@@ -66,21 +59,14 @@ Function IOPV_GraphCrossSections(unit_size,[path_str,cluster_name,set_num,morph_
 	SetDataFolder original_folder
 End
 
-Function IOPV_GraphCrossSection(slice_num,unit_size,[path_str,cluster_name,set_num,morph_num]) : Graph
+Function IOPV_GraphCrossSection(slice_num,unit_size,[path_str,morph_num]) : Graph
 	Variable slice_num
 	Variable unit_size
 	String path_str
-	String cluster_name
-	Variable set_num
 	Variable morph_num
 	String original_folder = GetDataFolder(1)
 	if(!ParamIsDefault(path_str))
 		NewPath/O/Q tempPath, path_str
-		LoadWave/N=tempWave/D/J/K=1/L={0,0,0,0,0}/O/P=tempPath/Q "morphology_"+num2str(morph_num)+".txt"
-		KillPath tempPath
-	elseif(!ParamIsDefault(cluster_name))
-		NewDataFolder/O/S $num2istr(set_num)
-		NewPath/O/Q tempPath, "Z:\\Data\\Morphology Data\\"+cluster_name+"\\"+num2istr(set_num)
 		LoadWave/N=tempWave/D/J/K=1/L={0,0,0,0,0}/O/P=tempPath/Q "morphology_"+num2str(morph_num)+".txt"
 		KillPath tempPath
 	else

@@ -7,6 +7,71 @@
 // For more information, see the LICENSE file that accompanies this software.
 // The Ising_OPV_Analysis project can be found on Github at https://github.com/MikeHeiber/Ising_OPV_Analysis
 
+Function IOPV_BinaryConverter()
+	String original_folder = GetDataFolder(1)
+	// Get path to set from user
+	NewPath/O/Q/M="Choose morphology set folder" set_path
+	if(V_flag!=0)
+		return NaN
+	endif
+	PathInfo set_path
+	String path_string = S_path
+	String set_id = ParseFilePath(0,path_string,":",1,0)
+	// Setup data folder
+	NewDataFolder/O/S root:Ising_OPV
+	NewDataFolder/O/S $(set_id)
+	// Choose morphology
+	Variable morph_num = 0
+	// Load morphology file
+	LoadWave/N=tempWave/D/J/K=1/L={0,0,0,0,0}/O/P=set_path/Q "morphology_"+num2str(morph_num)+".txt"
+	Wave tempWave0 = $("tempWave0")
+	WaveStats/Q tempWave0
+	Variable size = V_npnts
+	Variable Length = tempWave0[1]
+	Variable Width = tempWave0[2]
+	Variable Height = tempWave0[3]
+	Variable Num_types = tempWave0[7]
+	Make/O/I/N=(Num_types) counts = 0
+	Variable x
+	Variable y
+	Variable z
+	Variable i = 8+2*Num_types
+	Variable site_type
+	Variable site_count = 0
+	// Load morphology data into 3D wave
+	Make/B/U/N=(Length,Width,Height)/O data
+	for(x=0;x<Length;x+=1)
+		for(y=0;y<Width;y+=1)
+			for(z=0;z<Height;z+=1)
+				if(site_count==0 && i<size)
+					site_type = trunc(tempWave0[i]/(10^(strlen(num2str(tempWave0[i]))-1)))
+					site_count = tempWave0[i]-site_type*(10^(strlen(num2str(tempWave0[i]))-1))
+					i += 1
+				endif
+				data[x][y][z] = site_type
+				site_count -= 1
+			endfor
+		endfor
+	endfor
+	// Output data to binary file
+	Variable refnum
+	Open/P=set_path refnum as "morphology"+num2str(morph_num)+"_"+num2str(Length)+"x"+num2str(Width)+"x"+num2str(Height)+"_16bit.raw"
+	for(z=0;z<Height;z+=1)
+		for(x=0;x<Length;x+=1)
+			for(y=0;y<Width;y+=1)
+				int type = data[x][y][z]
+				FBinWrite/F=1/U refnum, type
+			endfor
+		endfor
+	endfor
+	// Close File
+	Close refnum
+	// Cleanup
+	KillPath set_path
+	KillWaves tempWave0 counts data
+	SetDataFolder original_folder
+End
+
 Function IOPV_ImportMorphologySet()
 	String original_folder = GetDataFolder(1)
 	// Get path to set from user
@@ -49,6 +114,7 @@ Function IOPV_ImportMorphologyData(set_id,path_string,mode)
 		target_index = 0
 		Make/T/N=1 job_name
 		Make/T/N=1 version_name
+		Make/T/N=1 tomo_set
 		Make/D/N=1 N_morphologies
 		Make/D/N=1 Length
 		Make/D/N=1 Width
@@ -79,6 +145,7 @@ Function IOPV_ImportMorphologyData(set_id,path_string,mode)
 		Make/D/N=1 calc_time_stdev
 	else
 		Wave/T version_name
+		Wave/T tomo_set
 		Wave/D N_morphologies
 		Wave/D Length
 		Wave/D Width
@@ -142,6 +209,11 @@ Function IOPV_ImportMorphologyData(set_id,path_string,mode)
 	Wave tempWave0
 	Variable N_morphs = str2num(StringFromList(0,StringFromList(1,stringWave0[0],"containing ")," "))
 	String version = RemoveEnding(StringFromList(1,stringWave0[0],"Ising_OPV v"))
+	if(StringMatch(stringWave0[numpnts(stringWave0)-1],"Morphologies imported from tomogram file*"))
+		tomo_set[target_index] = {StringFromList(1,stringWave0[numpnts(stringWave0)-1],": ")}
+	else
+		tomo_set[target_index] = "N/A"
+	endif
 	job_name[target_index] = {set_id}
 	version_name[target_index] = {version}
 	N_morphologies[target_index] = {N_morphs}
