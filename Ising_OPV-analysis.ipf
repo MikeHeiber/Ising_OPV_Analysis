@@ -209,10 +209,10 @@ Function IOPV_ImportMorphologyData(set_id,path_string,mode)
 	Wave tempWave0
 	Variable N_morphs = str2num(StringFromList(0,StringFromList(1,stringWave0[0],"containing ")," "))
 	String version = RemoveEnding(StringFromList(1,stringWave0[0],"Ising_OPV v"))
-	if(StringMatch(stringWave0[numpnts(stringWave0)-1],"Morphologies imported from tomogram file*"))
+	if(StringMatch(stringWave0[numpnts(stringWave0)-1],"Morphologies imported from tomogram*"))
 		tomo_set[target_index] = {StringFromList(1,stringWave0[numpnts(stringWave0)-1],": ")}
 	else
-		tomo_set[target_index] = "N/A"
+		tomo_set[target_index] = {"N/A"}
 	endif
 	job_name[target_index] = {set_id}
 	version_name[target_index] = {version}
