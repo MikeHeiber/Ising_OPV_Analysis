@@ -1,8 +1,8 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma IgorVersion = 6.3 // Minimum Igor version required
-#pragma version = 0.1-alpha
+#pragma version = 1.0-beta.1
 
-// Copyright (c) 2018 Michael C. Heiber
+// Copyright (c) 2018-2019 Michael C. Heiber
 // This source file is part of the Ising_OPV_Analysis project, which is subject to the MIT License.
 // For more information, see the LICENSE file that accompanies this software.
 // The Ising_OPV_Analysis project can be found on Github at https://github.com/MikeHeiber/Ising_OPV_Analysis
@@ -10,7 +10,12 @@
 #include <KBColorizeTraces>
 
 Menu "Ising_OPV"
-	"Import Morphology Set", /Q, IOPV_ImportMorphologySet()
+	"Import Morphology Set", /Q, IOPV_ImportMorphologySetGUI()
+	"Graph Composition Map", /Q, IOPV_GraphCompositionMapGUI()
+	"Graph Cross Section", /Q, IOPV_GraphCrossSectionGUI()
+	"Graph Film Depth Data", /Q, IOPV_GraphDepthDataGUI()
+	"Graph Tortuosity Map", /Q, IOPV_GraphTortuosityMapsGUI()
+	"Graph Tortusity Histograms", /Q, IOPV_GraphTortuosityHistsGUI()	
 End
 
 Window IOPV_Morphology_Table() : Table

@@ -1,11 +1,40 @@
 ﻿#pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma IgorVersion = 6.3 // Minimum Igor version required
-#pragma version = 0.1-alpha
+#pragma version = 1.0-beta.1
 
-// Copyright (c) 2018 Michael C. Heiber
+// Copyright (c) 2018-2019 Michael C. Heiber
 // This source file is part of the Ising_OPV_Analysis project, which is subject to the MIT License.
 // For more information, see the LICENSE file that accompanies this software.
 // The Ising_OPV_Analysis project can be found on Github at https://github.com/MikeHeiber/Ising_OPV_Analysis
+
+
+Function IOPV_AnalyzeTortuosityHists(set_id)
+	String set_id
+	String original_folder = GetDataFolder(1)
+	SetDatafolder root:Ising_OPV:$set_id
+	Wave tortuosity_hist1
+	Wave tortuosity_hist2
+	Wave tortuosity_vals
+	Variable bin_size = tortuosity_vals[1]-tortuosity_vals[0]
+	SetScale/P x (1.0+bin_size/2),bin_size,"", tortuosity_hist1,tortuosity_hist2
+	int i
+	Duplicate/O tortuosity_hist1 cumulation
+	for(i=1;i<numpnts(cumulation);i+=1)
+		cumulation[i] += cumulation[i-1]
+	endfor
+	SetScale/P x (1.0+bin_size),bin_size,"", cumulation
+	FindLevel/Q cumulation, 0.5
+	Variable/G tortuosity1_median = V_LevelX
+	Duplicate/O tortuosity_hist2 cumulation
+	for(i=1;i<numpnts(cumulation);i+=1)
+		cumulation[i] += cumulation[i-1]
+	endfor
+	SetScale/P x (1.0+bin_size),bin_size,"", cumulation
+	FindLevel/Q cumulation, 0.5
+	Variable/G tortuosity2_median = V_LevelX
+	KillWaves cumulation, tortuosity_vals
+	SetDataFolder original_folder
+End
 
 Function IOPV_BinaryConverter()
 	String original_folder = GetDataFolder(1)
@@ -72,7 +101,7 @@ Function IOPV_BinaryConverter()
 	SetDataFolder original_folder
 End
 
-Function IOPV_ImportMorphologySet()
+Function IOPV_ImportMorphologySetGUI()
 	String original_folder = GetDataFolder(1)
 	// Get path to set from user
 	NewPath/O/Q/M="Choose morphology set folder" set_path
@@ -84,6 +113,9 @@ Function IOPV_ImportMorphologySet()
 	Variable import_mode
 	Prompt import_mode, "Import mode:", popup, menu_list
 	DoPrompt "Choose a morphology set import mode:" import_mode
+	if(V_flag!=0)
+		return NaN
+	endif
 	import_mode -= 1
 	// Get set id name
 	PathInfo set_path
@@ -94,6 +126,7 @@ Function IOPV_ImportMorphologySet()
 	NewDataFolder/O/S root:Ising_OPV
 	// Import Morphology Data
 	IOPV_ImportMorphologyData(set_id,path_string,import_mode)
+	Print "•IOPV_ImportMorphologyData(\"" + set_id +"\",\"" + path_string + "\"," + num2str(import_mode) + ")"
 	// Cleanup
 	SetDataFolder original_folder
 End
@@ -184,16 +217,22 @@ Function IOPV_ImportMorphologyData(set_id,path_string,mode)
 	// Load morphology set data files
 	if(mode==0)
 		NewDataFolder/O/S $(set_id)
-		LoadWave/N=tempWave/D/J/K=1/L={0,0,0,0,0}/O/P=set_path/Q "interfacial_distance_histograms.txt"
+		LoadWave/N=tempWave/D/J/K=1/L={0,1,0,0,0}/O/P=set_path/Q "interfacial_distance_histograms.txt"
 		Duplicate/O $("tempWave1") interface_dist_hist1
 		Duplicate/O $("tempWave2") interface_dist_hist2
-		LoadWave/N=tempWave/D/J/K=1/L={0,0,0,0,0}/O/P=set_path/Q "tortuosity_histograms.txt"
+		LoadWave/N=tempWave/D/J/K=1/L={0,1,0,0,0}/O/P=set_path/Q "tortuosity_histograms.txt"
+		Duplicate/O $("tempWave0") tortuosity_vals
 		Duplicate/O $("tempWave1") tortuosity_hist1
 		Duplicate/O $("tempWave2") tortuosity_hist2
-		LoadWave/N=tempWave/D/J/K=1/L={0,0,0,0,0}/O/P=set_path/Q "correlation_data_avg.txt"
+		LoadWave/N=tempWave/D/J/K=1/L={0,1,0,0,0}/O/P=set_path/Q "correlation_data_avg.txt"
 		Duplicate/O $("tempWave1") correlation1
 		Duplicate/O $("tempWave2") correlation2
-		KillWaves $"tempWave0" $"tempWave1" $"tempWave2"
+		SetScale/P x 0,0.5,"nm", correlation1, correlation2
+		LoadWave/N=tempWave/D/J/K=1/L={0,1,0,0,0}/O/P=set_path/Q "depth_dependent_data_avg.txt"
+		Duplicate/O $("tempWave1") donor_composition
+		Duplicate/O $("tempWave3") domain_size
+		Duplicate/O $("tempWave5") iv_fraction
+		KillWaves $"tempWave0" $"tempWave1" $"tempWave2" $"tempWave3" $"tempWave4" $"tempWave5"
 	endif
 	String file_list = IndexedFile(set_path,-1,".txt")
 	String analysis_filename
@@ -244,9 +283,13 @@ Function IOPV_ImportMorphologyData(set_id,path_string,mode)
 	island_frac2_stdev[target_index] = {tempWave0[0][24]}
 	calc_time_avg[target_index] = {tempWave0[0][25]}
 	calc_time_stdev[target_index] = {tempWave0[0][26]}
+	// Analyze the tortuosity histograms
+	IOPV_AnalyzeTortuosityHists(set_id)
 	// Graph a cross sectional image
 	PathInfo	set_path
-	IOPV_GraphCrossSection(floor(Width[target_index]/2+0.5),1.0,path_str=S_path,morph_num=0)
+	IOPV_GraphCrossSection(floor(Width[target_index]/2+0.5),1.0,S_path,0)
+	// Graph a tortuosity map
+	IOPV_GraphTortuosityMaps(1.0,S_path,0)
 	// Cleanup
 	KillPath set_path
 	KillWaves stringWave0
