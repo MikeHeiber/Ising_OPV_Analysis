@@ -30,9 +30,11 @@ Function IOPV_GraphCompositionMapGUI()
 	// Get info from user
 	Variable morph_num
 	Variable unit_size=1
+	Variable scale_size
 	Prompt morph_num, "Enter a morphology section number (0-"+num2str(morph_num_max)+")"
 	Prompt unit_size, "Enter the pixel size (nm)"
-	DoPrompt "Enter Morphology Information:", morph_num, unit_size
+	Prompt scale_size, "(Optional) Enter the scalebar size (nm):"
+	DoPrompt "Enter Morphology Information:", morph_num, unit_size, scale_size
 	// User cancelled operation
 	if(V_flag==1)
 		SetDataFolder original_folder
@@ -45,6 +47,9 @@ Function IOPV_GraphCompositionMapGUI()
 	if(!(unit_size>0))
 		V_flag = -1
 	endif
+	if(scale_size<0)
+		V_flag = -1
+	endif
 	if(V_flag==-1)
 		DoAlert 0, "Invalid Entry! Try again."
 		SetDataFolder original_folder
@@ -52,14 +57,20 @@ Function IOPV_GraphCompositionMapGUI()
 	endif
 	SetDataFolder original_folder
 	// Graph the cross section image
-	Print "•IOPV_GraphCompositionMap("+num2str(unit_size)+",\""+path_string+"\","+num2str(morph_num)+")"
-	IOPV_GraphCompositionMap(unit_size,path_string,morph_num)
+	if(scale_size==0)
+		Print "•IOPV_GraphCompositionMap("+num2str(unit_size)+",\""+path_string+"\","+num2str(morph_num)+")"
+		IOPV_GraphCompositionMap(unit_size,path_string,morph_num)
+	else
+		Print "•IOPV_GraphCompositionMap("+num2str(unit_size)+",\""+path_string+"\","+num2str(morph_num)+",scalebar_size="+num2str(scale_size)+")"
+		IOPV_GraphCompositionMap(unit_size,path_string,morph_num,scalebar_size=scale_size)
+	endif
 End
 
-Function IOPV_GraphCompositionMap(unit_size,path_str,morph_num) : Graph
+Function IOPV_GraphCompositionMap(unit_size,path_str,morph_num,[scalebar_size]) : Graph
 	Variable unit_size
 	String path_str
 	int morph_num
+	Variable scalebar_size
 	String original_folder = GetDataFolder(1)
 	String set_id = StringFromList(ItemsInList(path_str,":")-1,path_str,":")
 	SetDataFolder root:
@@ -95,10 +106,13 @@ Function IOPV_GraphCompositionMap(unit_size,path_str,morph_num) : Graph
 	TextBox/C/N=text0/F=0/A=LT/X=1.00/Y=1.00/E=2/Z=1 ("Set "+set_id+", Section "+num2str(morph_num))
 	ColorScale/C/N=text1/F=0/A=RT/X=0.5/Y=4.00/E=2 width=10,heightPct=44,image=$("composition_map1_"+num2str(morph_num)),lblMargin=1,nticks=4,tickLen=4.00;DelayUpdate
 	ColorScale/C/N=text1 "Donor Volume Fraction"
-	Variable scalebar_size = round(unit_size*X_max*0.20/10)*10
+	if(ParamIsDefault(scalebar_size))
+		scalebar_size = round(unit_size*X_max*0.20/10)*10
+	endif
 	Variable scalebar_pnts = (200*scalebar_size/(unit_size*X_max))
 	ColorScale/C/N=text2/F=0/Z=1/B=1/A=LB/X=2.00/Y=2.00 vert=0,side=2,width=scalebar_pnts,height=13,image=$("composition_map1_"+num2str(morph_num)),axisRange={0.4999,0.5},nticks=0;DelayUpdate
-	TextBox/C/N=text3/F=0/Z=1/B=1/A=LB/X=8.00/Y=4.00 "\\f01"+num2str(scalebar_size)+" nm"
+	Variable indent_pct = 2 + 50*scalebar_pnts/200 - 50*18/200
+	TextBox/C/N=text3/F=0/Z=1/B=1/A=LB/X=(indent_pct)/Y=4.00 "\\f01"+num2str(scalebar_size)+" nm"
 	// Cleanup
 	KillWaves X_Position Y_Position Composition1 Composition2 
 	SetDataFolder original_folder
@@ -128,10 +142,12 @@ Function IOPV_GraphCrossSectionGUI()
 	Variable morph_num
 	Variable slice_num
 	Variable unit_size = 1
+	Variable scale_size
 	Prompt morph_num, "Enter a morphology section number (0-"+num2str(morph_num_max)+")"
 	Prompt slice_num, "Enter a slice number (0-"+num2str(Length-1)+")"
 	Prompt unit_size, "Enter the pixel size (nm)"
-	DoPrompt "Enter Cross Section Information:", morph_num, slice_num, unit_size
+	Prompt scale_size, "(Optional) Enter the scalebar size (nm):"
+	DoPrompt "Enter Cross Section Information:", morph_num, slice_num, unit_size, scale_size
 	// User cancelled operation
 	if(V_flag==1)
 		SetDataFolder original_folder
@@ -147,6 +163,9 @@ Function IOPV_GraphCrossSectionGUI()
 	if(!(unit_size>0))
 		V_flag = -1
 	endif
+	if(scale_size<0)
+		V_flag = -1
+	endif
 	if(V_flag==-1)
 		DoAlert 0, "Invalid Entry! Try again."
 		SetDataFolder original_folder
@@ -154,8 +173,13 @@ Function IOPV_GraphCrossSectionGUI()
 	endif
 	SetDataFolder original_folder
 	// Graph the cross section image
-	Print "•IOPV_GraphCrossSection("+num2str(slice_num)+","+num2str(unit_size)+",\""+path_string+"\","+num2str(morph_num)+")"
-	IOPV_GraphCrossSection(slice_num,unit_size,path_string,morph_num)
+	if(scale_size==0)
+		Print "•IOPV_GraphCrossSection("+num2str(slice_num)+","+num2str(unit_size)+",\""+path_string+"\","+num2str(morph_num)+")"
+		IOPV_GraphCrossSection(slice_num,unit_size,path_string,morph_num)
+	else
+		Print "•IOPV_GraphCrossSection("+num2str(slice_num)+","+num2str(unit_size)+",\""+path_string+"\","+num2str(morph_num)+",scalebar_size="+num2str(scale_size)+")"
+		IOPV_GraphCrossSection(slice_num,unit_size,path_string,morph_num,scalebar_size=scale_size)
+	endif
 End
 
 Function IOPV_GraphCrossSections(unit_size,path_str,morph_num)
@@ -185,11 +209,12 @@ Function IOPV_GraphCrossSections(unit_size,path_str,morph_num)
 	SetDataFolder original_folder
 End
 
-Function IOPV_GraphCrossSection(slice_num,unit_size,path_str,morph_num) : Graph
+Function IOPV_GraphCrossSection(slice_num,unit_size,path_str,morph_num,[scalebar_size]) : Graph
 	int slice_num
 	Variable unit_size
 	String path_str
 	int morph_num
+	Variable scalebar_size
 	String original_folder = GetDataFolder(1)
 	String set_id = StringFromList(ItemsInList(path_str,":")-1,path_str,":")
 	SetDataFolder root:
@@ -257,10 +282,13 @@ Function IOPV_GraphCrossSection(slice_num,unit_size,path_str,morph_num) : Graph
 	String image_name = "site_data_"+num2str(slice_num)+"_"+num2str(morph_num)
 	ModifyImage $(image_name) explicit=1,eval={1,1,4,52428},eval={2,65535,0,0},eval={0,-1,-1,-1},eval={255,-1,-1,-1}
 	ModifyGraph nticks=0
-	Variable scalebar_size = round(unit_size*Length*0.20/10)*10
+	if(ParamIsDefault(scalebar_size))
+		scalebar_size = round(unit_size*Length*0.20/10)*10
+	endif
 	Variable scalebar_pnts = (section_width*scalebar_size/(unit_size*Length))
 	ColorScale/C/N=text2/F=0/Z=1/B=1/A=LB/X=2.00/Y=2.00 vert=0,side=2,width=scalebar_pnts,height=13,image=$(image_name),ctab={0,100,Grays16,0},axisRange={0,1},nticks=0;DelayUpdate
-	TextBox/C/N=text3/F=0/Z=1/B=1/A=LB/X=8.00/Y=4.00 "\\f01"+num2str(scalebar_size)+" nm"
+	Variable indent_pct = 2 + 50*scalebar_pnts/section_width - 50*18/section_width
+	TextBox/C/N=text3/F=0/Z=1/B=1/A=LB/X=(indent_pct)/Y=4.00 "\\f01"+num2str(scalebar_size)+" nm"
 	SetDataFolder original_folder
 End
 
@@ -388,9 +416,11 @@ Function IOPV_GraphTortuosityMapsGUI()
 	// Get info from user
 	Variable morph_num
 	Variable unit_size=1
+	Variable scale_size
 	Prompt morph_num, "Enter a morphology section number (0-"+num2str(morph_num_max)+")"
 	Prompt unit_size, "Enter the pixel size (nm)"
-	DoPrompt "Enter Cross Section Information:", morph_num, unit_size
+	Prompt scale_size, "(Optional) Enter the scalebar size (nm):"
+	DoPrompt "Enter Cross Section Information:", morph_num, unit_size, scale_size
 	// User cancelled operation
 	if(V_flag==1)
 		SetDataFolder original_folder
@@ -403,6 +433,9 @@ Function IOPV_GraphTortuosityMapsGUI()
 	if(!(unit_size>0))
 		V_flag = -1
 	endif
+	if(scale_size<0)
+		V_flag = -1
+	endif
 	if(V_flag==-1)
 		DoAlert 0, "Invalid Entry! Try again."
 		SetDataFolder original_folder
@@ -410,14 +443,20 @@ Function IOPV_GraphTortuosityMapsGUI()
 	endif
 	SetDataFolder original_folder
 	// Graph the cross section image
-	Print "•IOPV_GraphTortuosityMaps("+num2str(unit_size)+",\""+path_string+"\","+num2str(morph_num)+")"
-	IOPV_GraphTortuosityMaps(unit_size,path_string,morph_num)
+	if(scale_size==0)
+		Print "•IOPV_GraphTortuosityMaps("+num2str(unit_size)+",\""+path_string+"\","+num2str(morph_num)+")"
+		IOPV_GraphTortuosityMaps(unit_size,path_string,morph_num)
+	else
+		Print "•IOPV_GraphTortuosityMaps("+num2str(unit_size)+",\""+path_string+"\","+num2str(morph_num)+",scalebar_size="+num2str(scale_size)+")"
+		IOPV_GraphTortuosityMaps(unit_size,path_string,morph_num,scalebar_size=scale_size)
+	endif
 End
 
-Function IOPV_GraphTortuosityMaps(unit_size,path_str,morph_num) : Graph
+Function IOPV_GraphTortuosityMaps(unit_size,path_str,morph_num,[scalebar_size]) : Graph
 	Variable unit_size
 	String path_str
 	int morph_num
+	Variable scalebar_size
 	String original_folder = GetDataFolder(1)
 	String set_id = StringFromList(ItemsInList(path_str,":")-1,path_str,":")
 	SetDataFolder root:
@@ -453,10 +492,13 @@ Function IOPV_GraphTortuosityMaps(unit_size,path_str,morph_num) : Graph
 	TextBox/C/N=text0/F=0/A=LT/X=1.00/Y=1.00/E=2/Z=1 ("Set "+set_id+", Section "+num2str(morph_num))
 	ColorScale/C/N=text1/F=0/A=RT/X=0.5/Y=5.00/E=2 width=10,heightPct=35,image=$("tortuosity_map1_"+num2str(morph_num)),lblMargin=1,nticks=4,tickLen=4.00;DelayUpdate
 	ColorScale/C/N=text1 "Donor Tortuosity"
-	Variable scalebar_size = round(unit_size*X_max*0.20/10)*10
+	if(ParamIsDefault(scalebar_size))
+		scalebar_size = round(unit_size*X_max*0.20/10)*10
+	endif
 	Variable scalebar_pnts = (200*scalebar_size/(unit_size*X_max))
 	ColorScale/C/N=text2/F=0/Z=1/B=1/A=LB/X=2.00/Y=2.00 vert=0,side=2,width=scalebar_pnts,height=13,image=$("tortuosity_map1_"+num2str(morph_num)),axisRange={1.3999,1.4},nticks=0;DelayUpdate
-	TextBox/C/N=text3/F=0/Z=1/B=1/A=LB/X=8.00/Y=4.00 "\\f01"+num2str(scalebar_size)+" nm"
+	Variable indent_pct = 2 + 50*scalebar_pnts/200 - 50*18/200
+	TextBox/C/N=text3/F=0/Z=1/B=1/A=LB/X=(indent_pct)/Y=4.00 "\\f01"+num2str(scalebar_size)+" nm"
 	// Tortuosity Map 2
 	NewImage/S=0/N=Tortuosity_Map tortuosity_map2;DelayUpdate
 	ModifyImage $("tortuosity_map2_"+num2str(morph_num)) ctab= {1,1.4,Red,0},minRGB=(0,2,26214),maxRGB=0
@@ -469,7 +511,7 @@ Function IOPV_GraphTortuosityMaps(unit_size,path_str,morph_num) : Graph
 	ColorScale/C/N=text1/F=0/A=RT/X=0.50/Y=5.00/E=2 width=10,heightPct=35,image=$("tortuosity_map2_"+num2str(morph_num)),lblMargin=1,nticks=4,tickLen=4.00;DelayUpdate
 	ColorScale/C/N=text1 "Acceptor Tortuosity"
 	ColorScale/C/N=text2/F=0/Z=1/B=1/A=LB/X=2.00/Y=2.00 vert=0,side=2,width=scalebar_pnts,height=13,image=$("tortuosity_map2_"+num2str(morph_num)),axisRange={1.3999,1.4},nticks=0;DelayUpdate
-	TextBox/C/N=text3/F=0/Z=1/B=1/A=LB/X=8.00/Y=4.00 "\\f01"+num2str(scalebar_size)+" nm"
+	TextBox/C/N=text3/F=0/Z=1/B=1/A=LB/X=(indent_pct)/Y=4.00 "\\f01"+num2str(scalebar_size)+" nm"
 	// Cleanup
 	KillWaves X_Position Y_Position Tortuosity1 Tortuosity2 
 	SetDataFolder original_folder

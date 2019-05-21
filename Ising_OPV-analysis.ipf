@@ -214,27 +214,38 @@ Function IOPV_ImportMorphologyData(set_id,path_string,mode)
 		endif	
 	endif
 	NewPath/O/Q set_path, path_string
+	String file_list
 	// Load morphology set data files
 	if(mode==0)
 		NewDataFolder/O/S $(set_id)
-		LoadWave/N=tempWave/D/J/K=1/L={0,1,0,0,0}/O/P=set_path/Q "interfacial_distance_histograms.txt"
-		Duplicate/O $("tempWave1") interface_dist_hist1
-		Duplicate/O $("tempWave2") interface_dist_hist2
-		LoadWave/N=tempWave/D/J/K=1/L={0,1,0,0,0}/O/P=set_path/Q "tortuosity_histograms.txt"
-		Duplicate/O $("tempWave0") tortuosity_vals
-		Duplicate/O $("tempWave1") tortuosity_hist1
-		Duplicate/O $("tempWave2") tortuosity_hist2
-		LoadWave/N=tempWave/D/J/K=1/L={0,1,0,0,0}/O/P=set_path/Q "correlation_data_avg.txt"
-		Duplicate/O $("tempWave1") correlation1
-		Duplicate/O $("tempWave2") correlation2
-		SetScale/P x 0,0.5,"nm", correlation1, correlation2
-		LoadWave/N=tempWave/D/J/K=1/L={0,1,0,0,0}/O/P=set_path/Q "depth_dependent_data_avg.txt"
-		Duplicate/O $("tempWave1") donor_composition
-		Duplicate/O $("tempWave3") domain_size
-		Duplicate/O $("tempWave5") iv_fraction
-		KillWaves $"tempWave0" $"tempWave1" $"tempWave2" $"tempWave3" $"tempWave4" $"tempWave5"
+		// Get list of all txt files in the folder
+		file_list = IndexedFile(set_path,-1,".txt")
+		if(WhichListItem("interfacial_distance_histograms.txt",file_list)!=-1)
+			LoadWave/N=tempWave/D/J/K=1/L={0,1,0,0,0}/O/P=set_path/Q "interfacial_distance_histograms.txt"
+			Duplicate/O $("tempWave1") interface_dist_hist1
+			Duplicate/O $("tempWave2") interface_dist_hist2
+		endif
+		if(WhichListItem("tortuosity_histograms.txt",file_list)!=-1)
+			LoadWave/N=tempWave/D/J/K=1/L={0,1,0,0,0}/O/P=set_path/Q "tortuosity_histograms.txt"
+			Duplicate/O $("tempWave0") tortuosity_vals
+			Duplicate/O $("tempWave1") tortuosity_hist1
+			Duplicate/O $("tempWave2") tortuosity_hist2
+		endif
+		if(WhichListItem("correlation_data_avg.txt",file_list)!=-1)
+			LoadWave/N=tempWave/D/J/K=1/L={0,1,0,0,0}/O/P=set_path/Q "correlation_data_avg.txt"
+			Duplicate/O $("tempWave1") correlation1
+			Duplicate/O $("tempWave2") correlation2
+			SetScale/P x 0,0.5,"nm", correlation1, correlation2
+		endif
+		if(WhichListItem("depth_dependent_data_avg.txt",file_list)!=-1)
+			LoadWave/N=tempWave/D/J/K=1/L={0,1,0,0,0}/O/P=set_path/Q "depth_dependent_data_avg.txt"
+			Duplicate/O $("tempWave1") donor_composition
+			Duplicate/O $("tempWave3") domain_size
+			Duplicate/O $("tempWave5") iv_fraction
+		endif
+		KillWaves/Z $"tempWave0" $"tempWave1" $"tempWave2" $"tempWave3" $"tempWave4" $"tempWave5"
 	endif
-	String file_list = IndexedFile(set_path,-1,".txt")
+	file_list = IndexedFile(set_path,-1,".txt")
 	String analysis_filename
 	if(ItemsInList(file_list))
 		analysis_filename = StringFromList(0,ListMatch(file_list,"analysis_summary*"))
