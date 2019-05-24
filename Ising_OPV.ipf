@@ -14,7 +14,7 @@ Menu "Ising_OPV"
 	"Graph Composition Map", /Q, IOPV_GraphCompositionMapGUI()
 	"Graph Cross Section", /Q, IOPV_GraphCrossSectionGUI()
 	"Graph Film Depth Data", /Q, IOPV_GraphDepthDataGUI()
-	"Graph Tortuosity Map", /Q, IOPV_GraphTortuosityMapsGUI()
+	"Graph Tortuosity Maps", /Q, IOPV_GraphTortuosityMapsGUI()
 	"Graph Tortusity Histograms", /Q, IOPV_GraphTortuosityHistsGUI()	
 End
 

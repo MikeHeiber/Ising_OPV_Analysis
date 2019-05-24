@@ -125,8 +125,8 @@ Function IOPV_ImportMorphologySetGUI()
 	// Setup data folder
 	NewDataFolder/O/S root:Ising_OPV
 	// Import Morphology Data
-	IOPV_ImportMorphologyData(set_id,path_string,import_mode)
 	Print "•IOPV_ImportMorphologyData(\"" + set_id +"\",\"" + path_string + "\"," + num2str(import_mode) + ")"
+	IOPV_ImportMorphologyData(set_id,path_string,import_mode)
 	// Cleanup
 	SetDataFolder original_folder
 End
@@ -138,6 +138,27 @@ Function IOPV_ImportMorphologyData(set_id,path_string,mode)
 	if(mode>1)
 		Print "Error Importing Morphology Set!  Invalid data import mode."
 	endif
+	// Check that selected path points to an Ising_OPV morphology dataset
+	NewPath/O/Q set_path, path_string
+	String file_list
+	file_list = IndexedFile(set_path,-1,".txt")
+	// Check that an analysis_summary file exists
+	String analysis_filename
+	if(ItemsInList(ListMatch(file_list,"analysis_summary*")))
+		analysis_filename = StringFromList(0,ListMatch(file_list,"analysis_summary*"))
+	else
+		Print "Error! Analysis summary file not found!"
+		return NaN
+	endif
+	LoadWave/N=stringWave/J/K=2/P=set_path/Q analysis_filename
+	Wave/T stringWave0
+	// Check that the analysis_summary file is from Ising_OPV
+	if(WhichListItem("Ising_OPV",stringWave0[0]," ")==-1)
+		Print "Error! Selected directory was not a valid Ising_OPV morphology set."
+		return NaN
+	endif
+	LoadWave/N=tempWave/D/J/K=1/L={0,2,0,0,0}/O/P=set_path/Q/M analysis_filename
+	Wave tempWave0
 	String original_folder = GetDataFolder(1)
 	SetDataFolder root:Ising_OPV
 	// Setup job table
@@ -213,8 +234,6 @@ Function IOPV_ImportMorphologyData(set_id,path_string,mode)
 			target_index = numpnts(job_name)
 		endif	
 	endif
-	NewPath/O/Q set_path, path_string
-	String file_list
 	// Load morphology set data files
 	if(mode==0)
 		NewDataFolder/O/S $(set_id)
@@ -245,18 +264,7 @@ Function IOPV_ImportMorphologyData(set_id,path_string,mode)
 		endif
 		KillWaves/Z $"tempWave0" $"tempWave1" $"tempWave2" $"tempWave3" $"tempWave4" $"tempWave5"
 	endif
-	file_list = IndexedFile(set_path,-1,".txt")
-	String analysis_filename
-	if(ItemsInList(file_list))
-		analysis_filename = StringFromList(0,ListMatch(file_list,"analysis_summary*"))
-	else
-		Print "Error! Parameter file not found!"
-		return NaN
-	endif
-	LoadWave/N=stringWave/J/K=2/P=set_path/Q analysis_filename
-	Wave/T stringWave0
-	LoadWave/N=tempWave/D/J/K=1/L={0,2,0,0,0}/O/P=set_path/Q/M analysis_filename
-	Wave tempWave0
+	// Parse analysis_summary file
 	Variable N_morphs = str2num(StringFromList(0,StringFromList(1,stringWave0[0],"containing ")," "))
 	String version = RemoveEnding(StringFromList(1,stringWave0[0],"Ising_OPV v"))
 	if(StringMatch(stringWave0[numpnts(stringWave0)-1],"Morphologies imported from tomogram*"))

@@ -41,7 +41,7 @@ Function IOPV_GraphCompositionMapGUI()
 		return NaN
 	endif
 	// Check for valid user input
-	if(morph_num<0 || morph_num>=morph_num_max)
+	if(morph_num<0 || morph_num>morph_num_max)
 		V_flag = -1
 	endif
 	if(!(unit_size>0))
@@ -95,7 +95,7 @@ Function IOPV_GraphCompositionMap(unit_size,path_str,morph_num,[scalebar_size]) 
 		composition_map1[X_Position[i]][Y_Position[i]] = Composition1[i]
 		composition_map2[X_Position[i]][Y_Position[i]] = Composition2[i]
 	endfor
-	// Tortuosity Map 1
+	// Graph Composition Map
 	NewImage/S=0/N=Composition_Map composition_map1;DelayUpdate
 	ModifyImage $("composition_map1_"+num2str(morph_num)) ctab={0,1,RedWhiteBlue,0},minRGB=0,maxRGB=0
 	SetAxis/A left
@@ -104,13 +104,14 @@ Function IOPV_GraphCompositionMap(unit_size,path_str,morph_num,[scalebar_size]) 
 	ModifyGraph tick=3,noLabel=2
 	ModifyGraph margin(left)=2,margin(bottom)=2,margin(right)=45,margin(top)=12
 	TextBox/C/N=text0/F=0/A=LT/X=1.00/Y=1.00/E=2/Z=1 ("Set "+set_id+", Section "+num2str(morph_num))
-	ColorScale/C/N=text1/F=0/A=RT/X=0.5/Y=4.00/E=2 width=10,heightPct=44,image=$("composition_map1_"+num2str(morph_num)),lblMargin=1,nticks=4,tickLen=4.00;DelayUpdate
+	ColorScale/C/N=text1/F=0/A=RT/X=0.5/Y=4.00/E=2/Z=1 width=10,heightPct=44,image=$("composition_map1_"+num2str(morph_num)),lblMargin=1,nticks=4,tickLen=4.00;DelayUpdate
 	ColorScale/C/N=text1 "Donor Volume Fraction"
+	// Add scalebar
 	if(ParamIsDefault(scalebar_size))
 		scalebar_size = round(unit_size*X_max*0.20/10)*10
 	endif
 	Variable scalebar_pnts = (200*scalebar_size/(unit_size*X_max))
-	ColorScale/C/N=text2/F=0/Z=1/B=1/A=LB/X=2.00/Y=2.00 vert=0,side=2,width=scalebar_pnts,height=13,image=$("composition_map1_"+num2str(morph_num)),axisRange={0.4999,0.5},nticks=0;DelayUpdate
+	ColorScale/C/N=text2/F=0/Z=1/B=1/A=LB/X=2.00/Y=2.00 vert=0,side=2,width=scalebar_pnts,height=13,image=$("composition_map1_"+num2str(morph_num)),ctab={0,100,Grays16,0},axisRange={*,1},nticks=0;DelayUpdate
 	Variable indent_pct = 2 + 50*scalebar_pnts/200 - 50*18/200
 	TextBox/C/N=text3/F=0/Z=1/B=1/A=LB/X=(indent_pct)/Y=4.00 "\\f01"+num2str(scalebar_size)+" nm"
 	// Cleanup
@@ -154,7 +155,7 @@ Function IOPV_GraphCrossSectionGUI()
 		return NaN
 	endif
 	// Check for valid user input
-	if(morph_num<0 || morph_num>=morph_num_max)
+	if(morph_num<0 || morph_num>morph_num_max)
 		V_flag = -1
 	endif
 	if(slice_num<0 || slice_num>=Length)
@@ -282,6 +283,7 @@ Function IOPV_GraphCrossSection(slice_num,unit_size,path_str,morph_num,[scalebar
 	String image_name = "site_data_"+num2str(slice_num)+"_"+num2str(morph_num)
 	ModifyImage $(image_name) explicit=1,eval={1,1,4,52428},eval={2,65535,0,0},eval={0,-1,-1,-1},eval={255,-1,-1,-1}
 	ModifyGraph nticks=0
+	// Add scalebar
 	if(ParamIsDefault(scalebar_size))
 		scalebar_size = round(unit_size*Length*0.20/10)*10
 	endif
@@ -427,7 +429,7 @@ Function IOPV_GraphTortuosityMapsGUI()
 		return NaN
 	endif
 	// Check for valid user input
-	if(morph_num<0 || morph_num>=morph_num_max)
+	if(morph_num<0 || morph_num>morph_num_max)
 		V_flag = -1
 	endif
 	if(!(unit_size>0))
@@ -483,34 +485,37 @@ Function IOPV_GraphTortuosityMaps(unit_size,path_str,morph_num,[scalebar_size]) 
 	endfor
 	// Tortuosity Map 1
 	NewImage/S=0/N=Tortuosity_Map tortuosity_map1;DelayUpdate
-	ModifyImage $("tortuosity_map1_"+num2str(morph_num)) ctab={1,1.4,Blue,0},minRGB=(26214,0,0),maxRGB=0
+	ModifyImage $("tortuosity_map1_"+num2str(morph_num)) ctab={1,*,Rainbow,1},minRGB=(0,0,0),maxRGB=0
 	SetAxis/A left
 	IOPV_GraphStyleLinLin()
 	ModifyGraph width=200,height=200
 	ModifyGraph tick=3,noLabel=2
 	ModifyGraph margin(left)=2,margin(bottom)=2,margin(right)=45,margin(top)=12
+	// Add label
 	TextBox/C/N=text0/F=0/A=LT/X=1.00/Y=1.00/E=2/Z=1 ("Set "+set_id+", Section "+num2str(morph_num))
-	ColorScale/C/N=text1/F=0/A=RT/X=0.5/Y=5.00/E=2 width=10,heightPct=35,image=$("tortuosity_map1_"+num2str(morph_num)),lblMargin=1,nticks=4,tickLen=4.00;DelayUpdate
+	// Add colorscale
+	ColorScale/C/N=text1/F=0/A=RT/X=0.5/Y=5.00/E=2/Z=1/B=1 width=10,heightPct=35,image=$("tortuosity_map1_"+num2str(morph_num)),lblMargin=1,nticks=4,tickLen=4.00;DelayUpdate
 	ColorScale/C/N=text1 "Donor Tortuosity"
+	// Add scalebar
 	if(ParamIsDefault(scalebar_size))
 		scalebar_size = round(unit_size*X_max*0.20/10)*10
 	endif
 	Variable scalebar_pnts = (200*scalebar_size/(unit_size*X_max))
-	ColorScale/C/N=text2/F=0/Z=1/B=1/A=LB/X=2.00/Y=2.00 vert=0,side=2,width=scalebar_pnts,height=13,image=$("tortuosity_map1_"+num2str(morph_num)),axisRange={1.3999,1.4},nticks=0;DelayUpdate
+	ColorScale/C/N=text2/F=0/Z=1/B=1/A=LB/X=2.00/Y=2.00 vert=0,side=2,width=scalebar_pnts,height=13,image=$("tortuosity_map1_"+num2str(morph_num)),ctab={0,100,Grays16,0},axisRange={*,1},nticks=0;DelayUpdate
 	Variable indent_pct = 2 + 50*scalebar_pnts/200 - 50*18/200
 	TextBox/C/N=text3/F=0/Z=1/B=1/A=LB/X=(indent_pct)/Y=4.00 "\\f01"+num2str(scalebar_size)+" nm"
 	// Tortuosity Map 2
 	NewImage/S=0/N=Tortuosity_Map tortuosity_map2;DelayUpdate
-	ModifyImage $("tortuosity_map2_"+num2str(morph_num)) ctab= {1,1.4,Red,0},minRGB=(0,2,26214),maxRGB=0
+	ModifyImage $("tortuosity_map2_"+num2str(morph_num)) ctab={1,*,Rainbow,1},minRGB=(0,0,0),maxRGB=0
 	SetAxis/A left
 	IOPV_GraphStyleLinLin()
 	ModifyGraph width=200,height=200
 	ModifyGraph tick=3,noLabel=2
 	ModifyGraph margin(left)=2,margin(bottom)=2,margin(right)=45,margin(top)=12
 	TextBox/C/N=text0/F=0/A=LT/X=1.00/Y=1.00/E=2/Z=1 ("Set "+set_id+", Section "+num2str(morph_num))
-	ColorScale/C/N=text1/F=0/A=RT/X=0.50/Y=5.00/E=2 width=10,heightPct=35,image=$("tortuosity_map2_"+num2str(morph_num)),lblMargin=1,nticks=4,tickLen=4.00;DelayUpdate
+	ColorScale/C/N=text1/F=0/A=RT/X=0.50/Y=5.00/E=2/Z=1/B=1 width=10,heightPct=35,image=$("tortuosity_map2_"+num2str(morph_num)),lblMargin=1,nticks=4,tickLen=4.00;DelayUpdate
 	ColorScale/C/N=text1 "Acceptor Tortuosity"
-	ColorScale/C/N=text2/F=0/Z=1/B=1/A=LB/X=2.00/Y=2.00 vert=0,side=2,width=scalebar_pnts,height=13,image=$("tortuosity_map2_"+num2str(morph_num)),axisRange={1.3999,1.4},nticks=0;DelayUpdate
+	ColorScale/C/N=text2/F=0/Z=1/B=1/A=LB/X=2.00/Y=2.00 vert=0,side=2,width=scalebar_pnts,height=13,image=$("tortuosity_map2_"+num2str(morph_num)),ctab={0,100,Grays16,0},axisRange={*,1},nticks=0;DelayUpdate
 	TextBox/C/N=text3/F=0/Z=1/B=1/A=LB/X=(indent_pct)/Y=4.00 "\\f01"+num2str(scalebar_size)+" nm"
 	// Cleanup
 	KillWaves X_Position Y_Position Tortuosity1 Tortuosity2 
